@@ -1,0 +1,12 @@
+{
+  "name": "videojs-offset",
+  "author": "Can Küçükyılmaz <can@vngrs.com>",
+  "license": "MIT",
+  "main": [
+    "dist/videojs-offset.min.js"
+  ],
+  "keywords": [
+    "videojs",
+    "videojs-plugin"
+  ]
+}
