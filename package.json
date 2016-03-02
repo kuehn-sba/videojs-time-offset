@@ -29,7 +29,8 @@
     "version": "babel-node scripts/version.js",
     "postversion": "babel-node scripts/postversion.js",
     "prepublish": "npm run build",
-    "semantic-release": "semantic-release pre && npm run version && npm publish && semantic-release post"
+    "postpublish": "publish-latest",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "keywords": [
     "videojs",
@@ -97,6 +98,7 @@
     "karma-safari-launcher": "^0.1.1",
     "mkdirp": "^0.5.1",
     "npm-run-all": "^1.5.1",
+    "publish-latest": "^1.1.2",
     "qunitjs": "^1.21.0",
     "rimraf": "^2.5.1",
     "semantic-release": "^4.3.5",
