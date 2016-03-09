@@ -62,7 +62,7 @@ const onPlayerReady = (player, options) => {
   options.perPageInMinutes = options.perPageInMinutes * 60;
 
   // page is natural number convert it to integer
-  options.perPage = options.perPage - 1;
+  options.page = options.page - 1;
 
   if (options.start > 0) {
     offsetStart = options.start;

@@ -1,6 +1,6 @@
 /**
  * videojs-time-offset
- * @version 0.1.0
+ * @version 0.1.1
  * @copyright 2016 Can Küçükyılmaz <can@vngrs.com>
  * @license MIT
  */
@@ -76,7 +76,7 @@ var onPlayerReady = function onPlayerReady(player, options) {
   options.perPageInMinutes = options.perPageInMinutes * 60;
 
   // page is natural number convert it to integer
-  options.perPage = options.perPage - 1;
+  options.page = options.page - 1;
 
   if (options.start > 0) {
     offsetStart = options.start;
