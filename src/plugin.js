@@ -54,6 +54,9 @@ const onPlayerReady = (player, options) => {
   let offsetEnd;
   let computedDuration;
 
+  // trigger ended event only once
+  let isEndedTriggered = false;
+
   /**
    * calc offsetStart and offsetEnd based on options
    * if page params is setted use page values, Otherwise use defaults
@@ -142,6 +145,7 @@ const onPlayerReady = (player, options) => {
     const current = player.currentTime();
     const originalDuration = player.originalDuration();
 
+    isEndedTriggered = false;
     // if setted end value isn't correct, Fix IT
     // it shouldn't be bigger than video length
     if (offsetEnd > originalDuration) {
@@ -165,6 +169,10 @@ const onPlayerReady = (player, options) => {
 
     if (remaining <= 0) {
       player.pause();
+      if (!isEndedTriggered) {
+        player.trigger('ended');
+        isEndedTriggered = true;
+      }
     }
   });
 };
