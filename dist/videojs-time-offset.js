@@ -1,6 +1,6 @@
 /**
  * videojs-time-offset
- * @version 0.1.1
+ * @version 0.2.0
  * @copyright 2016 Can Küçükyılmaz <can@vngrs.com>
  * @license MIT
  */
@@ -67,6 +67,9 @@ var onPlayerReady = function onPlayerReady(player, options) {
   var offsetStart = undefined;
   var offsetEnd = undefined;
   var computedDuration = undefined;
+
+  // trigger ended event only once
+  var isEndedTriggered = false;
 
   /**
    * calc offsetStart and offsetEnd based on options
@@ -164,6 +167,7 @@ var onPlayerReady = function onPlayerReady(player, options) {
     var current = player.currentTime();
     var originalDuration = player.originalDuration();
 
+    isEndedTriggered = false;
     // if setted end value isn't correct, Fix IT
     // it shouldn't be bigger than video length
     if (offsetEnd > originalDuration) {
@@ -187,6 +191,10 @@ var onPlayerReady = function onPlayerReady(player, options) {
 
     if (remaining <= 0) {
       player.pause();
+      if (!isEndedTriggered) {
+        player.trigger('ended');
+        isEndedTriggered = true;
+      }
     }
   });
 };
