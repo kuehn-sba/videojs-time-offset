@@ -121,7 +121,9 @@ const onPlayerReady = (player, options) => {
 
     const current = __monkey__.currentTime.call(player) - offsetStart;
 
-    if (current < 0) {
+    // in safari with hls, it returns floating number numbers, fix it
+    if (Math.ceil(current) < 0) {
+      player.pause();
       player.currentTime(0);
       return 0;
     }
