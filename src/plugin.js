@@ -1,3 +1,4 @@
+/* global document */
 import videojs from 'video.js';
 
 // Default options for the plugin.
@@ -147,6 +148,8 @@ const onPlayerReady = (player, options) => {
     const current = player.currentTime();
     const originalDuration = player.originalDuration();
 
+    player.pageCount = Math.ceil(originalDuration / options.perPageInMinutes);
+
     isEndedTriggered = false;
     // if setted end value isn't correct, Fix IT
     // it shouldn't be bigger than video length
@@ -164,6 +167,10 @@ const onPlayerReady = (player, options) => {
     if (current < 0) {
       player.currentTime(0);
     }
+
+    if (options.page && computedDuration) {
+      player.play();
+    }
   });
 
   player.on('timeupdate', () => {
@@ -171,9 +178,12 @@ const onPlayerReady = (player, options) => {
 
     if (remaining <= 0) {
       player.pause();
+
       if (!isEndedTriggered) {
         player.trigger('ended');
-        isEndedTriggered = true;
+        player.on('adEnded', function() {
+          isEndedTriggered = true;
+        });
       }
     }
   });
