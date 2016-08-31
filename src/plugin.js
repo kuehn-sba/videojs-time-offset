@@ -167,10 +167,6 @@ const onPlayerReady = (player, options) => {
     if (current < 0) {
       player.currentTime(0);
     }
-
-    if (options.page && computedDuration) {
-      player.play();
-    }
   });
 
   player.on('timeupdate', () => {
