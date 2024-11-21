@@ -23,7 +23,8 @@ var defaults = {
   start: 0,
   end: 0,
   page: 1,
-  perPageInMinutes: 0
+  perPageInMinutes: 0,
+  originalFallback: false
 };
 
 /**
@@ -67,6 +68,7 @@ var onPlayerReady = function onPlayerReady(player, options) {
   var offsetStart = undefined;
   var offsetEnd = undefined;
   var computedDuration = undefined;
+  var originalFallback = undefined;
 
   // trigger ended event only once
   var isEndedTriggered = false;
@@ -95,19 +97,55 @@ var onPlayerReady = function onPlayerReady(player, options) {
 
   computedDuration = offsetEnd - offsetStart;
 
+  originalFallback = options.originalFallback;
+
   /**
    * For monkey patching take references of original methods
    * We will override original methods
    */
+  // @fix: correct buffer calculation - https://github.com/dogusdigital/videojs-time-offset/issues/8 RIO
   var __monkey__ = {
     currentTime: player.currentTime,
     remainingTime: player.remainingTime,
-    duration: player.duration
+    duration: player.duration,
+    buffered: player.buffered 
   };
 
   player.addClass('vjs-time-offset');
 
   addStyle();
+
+  player.updateTimeOffset = function(start, end) {
+    offsetStart       = start;
+    offsetEnd         = end;
+    computedDuration  = offsetEnd - offsetStart;
+  };
+
+  // @fix: correct buffer calculation - https://github.com/dogusdigital/videojs-time-offset/issues/8 RIO
+  player.buffered = function () {
+    var buffered = __monkey__.buffered.call(player);
+    return {
+        buffered: buffered,
+        length: buffered.length,
+        start: function(i) { 
+          var buf = buffered.start(i) - offsetStart;
+
+          if (buf < 0)                buf = 0;
+          if (buf > computedDuration) buf = computedDuration;
+
+          return buf; 
+        },
+        
+        end: function(i) { 
+          var buf = buffered.end(i) - offsetStart;
+
+          if (buf < 0)                buf = 0;
+          if (buf > computedDuration) buf = computedDuration;
+
+          return buf; 
+        }
+    };
+  };
 
   player.remainingTime = function () {
     return player.duration() - player.currentTime();
@@ -143,12 +181,20 @@ var onPlayerReady = function onPlayerReady(player, options) {
 
     var current = __monkey__.currentTime.call(player) - offsetStart;
 
-    // in safari with hls, it returns floating number numbers, fix it
-    if (Math.ceil(current) < 0) {
+    // @fix: currentTime - exact startframe - https://github.com/dogusdigital/videojs-time-offset/issues/9 RIO
+    // @fix: currentTime - exact endframe   - https://github.com/dogusdigital/videojs-time-offset/issues/6 RIO
+    if (current >= 0 && current > computedDuration) {
+      player.currentTime(computedDuration);
+      current = computedDuration;
+
       player.pause();
-      player.currentTime(0);
-      return 0;
+      if (!isEndedTriggered) {
+        // @fix - double triggering - https://github.com/dogusdigital/videojs-time-offset/issues/10 RIO
+        player.trigger('endedoffset');
+        isEndedTriggered = true;
+      }
     }
+
     return current;
   };
 
@@ -168,20 +214,33 @@ var onPlayerReady = function onPlayerReady(player, options) {
   player.on('loadedmetadata', function () {
     var current = player.currentTime();
     var originalDuration = player.originalDuration();
+    var invalidDuration = false;
 
     isEndedTriggered = false;
+
+    // @fix: original duration fallback - https://github.com/dogusdigital/videojs-time-offset/issues/11 RIO
+
     // if setted end value isn't correct, Fix IT
     // it shouldn't be bigger than video length
-    if (offsetEnd > originalDuration) {
-      computedDuration = originalDuration - offsetStart;
+    // added 0.03 (<1 frame) THRESHOLD because of inaccurate
+    if (offsetEnd-0.03 > originalDuration) {
+      if (originalFallback) computedDuration = originalDuration - offsetStart;
+      invalidDuration = true;
     }
 
     // if setted start value isn't correct, Fix IT
     // it shouldn't be bigger than video length
-    if (offsetStart > originalDuration) {
-      offsetStart = 0;
-      computedDuration = originalDuration;
+    // added 0.001 THRESHOLD because of inaccurate
+    if (offsetStart-0.001 > originalDuration) {
+      if (originalFallback) {
+        offsetStart = 0;
+        computedDuration = originalDuration;
+      }
+      invalidDuration = true;
     }
+
+    // trigger invalidDuration event
+    if (invalidDuration) player.trigger('invalidDuration');
 
     if (current < 0) {
       player.currentTime(0);
@@ -190,11 +249,12 @@ var onPlayerReady = function onPlayerReady(player, options) {
 
   player.on('timeupdate', function () {
     var remaining = player.remainingTime();
-
-    if (remaining <= 0) {
+    // added 0.001 THRESHOLD because of inaccurate
+    if (remaining <= 0.001) {
       player.pause();
       if (!isEndedTriggered) {
-        player.trigger('ended');
+        // @fix - double triggering - https://github.com/dogusdigital/videojs-time-offset/issues/10 RIO
+        player.trigger('endedoffset');
         isEndedTriggered = true;
       }
     }
