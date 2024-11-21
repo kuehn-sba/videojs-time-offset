@@ -277,12 +277,12 @@ var timeOffset = function timeOffset(options) {
   var _this = this;
 
   this.ready(function () {
-    onPlayerReady(_this, _videoJs2['default'].mergeOptions(defaults, options));
+    onPlayerReady(_this, _videoJs2['default'].obj.merge(defaults, options));  // @fix: videojs 8.0 warn RIO
   });
 };
 
 // Register the plugin with video.js.
-_videoJs2['default'].plugin('timeOffset', timeOffset);
+_videoJs2['default'].registerPlugin('timeOffset', timeOffset);  // @fix: videojs 8.0 warn RIO
 
 // Include the version number.
 timeOffset.VERSION = '0.0.1';
